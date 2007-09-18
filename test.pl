@@ -6,9 +6,8 @@
 # change 'tests => 1' to 'tests => last_test_to_print';
 
 use Test;
-BEGIN { plan tests => 38 ; $ENV{'SNMPCONFPATH'} = 'nopath'};
+BEGIN { eval "use Cwd qw(abs_path)"; plan tests => 38 ; $ENV{'SNMPCONFPATH'} = 'nopath' ; $ENV{'MIBDIRS'} = '+' . abs_path("../../mibs"); };
 use NetSNMP::OID;
-use Data::Dumper;
 
 ok(1); # If we made it this far, we're ok.
 

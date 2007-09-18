@@ -5,5 +5,4 @@ OID.pm
 OID.xs
 README
 test.pl
-typemap
 META.yml                                 Module meta-data (added by MakeMaker)

@@ -11,7 +11,7 @@
 
 typedef struct netsnmp_oid_s {
     oid                 *name;
-    unsigned int         len;
+    size_t               len;
     oid                  namebuf[ MAX_OID_LEN ];
 } netsnmp_oid;
 
@@ -179,7 +179,7 @@ nso_newptr(initstring)
     char *initstring
     CODE:
         if (get_tree_head() == NULL)
-            init_mib();
+            netsnmp_init_mib();
         RETVAL = SNMP_MALLOC_TYPEDEF(netsnmp_oid);
         RETVAL->name = RETVAL->namebuf;
         RETVAL->len = sizeof(RETVAL->namebuf)/sizeof(RETVAL->namebuf[0]);
@@ -272,6 +272,7 @@ nsop_get_indexes(oid1)
         oid *oidp;
         size_t oidp_len;
         AV *myret;
+        int is_private;
 
     CODE:
         {
@@ -334,13 +335,29 @@ nsop_get_indexes(oid1)
                     return;             /* xxx mem leak */
                 }
                 vbdata.type = mib_to_asn_type(indexnode->type);
-                
+
                 if (vbdata.type == (u_char) -1) {
                     RETVAL = NULL;
                     return; /* XXX: not good.  half populated stack? */
                 }
-                if (index->isimplied)
+
+                /* check for fixed length strings */
+                if (vbdata.type == ASN_OCTET_STR &&
+                    indexnode->ranges && !indexnode->ranges->next
+                    && indexnode->ranges->low == indexnode->ranges->high) {
+                    vbdata.val_len = indexnode->ranges->high;
                     vbdata.type |= ASN_PRIVATE;
+                    is_private = 1;
+                } else {
+                    vbdata.val_len = 0;
+                    if (index->isimplied) {
+                        vbdata.type |= ASN_PRIVATE;
+                        is_private = 1;
+                    } else {
+                        is_private = 0;
+                    }
+                }
+
                 /* possible memory leak: vbdata.data should be freed later */
                 if (parse_one_oid_index(&oidp, &oidp_len, &vbdata, 0)
                     != SNMPERR_SUCCESS) {
@@ -348,7 +365,7 @@ nsop_get_indexes(oid1)
                     return;
                 }
                 out_len = 0;
-                if (index->isimplied)
+                if (is_private)
                     vbdata.type ^= ASN_PRIVATE;
                 out_len =
                     __snprint_value (buf, buf_len, &vbdata, indexnode,

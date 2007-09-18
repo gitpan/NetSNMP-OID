@@ -62,8 +62,8 @@ sub InitMakeParams {
 	  else
 	  {
 	    @LibDirs = ();
-	    @LibDirs[0] = prompt("The Net-SNMP library ($snmp_lib_file) could not be found.\nPlease enter the directory where it is located:");
-	    @LibDirs[0] =~ s/\\$//;
+	    $LibDirs[0] = prompt("The Net-SNMP library ($snmp_lib_file) could not be found.\nPlease enter the directory where it is located:");
+	    $LibDirs[0] =~ s/\\$//;
 	  }
 	}
 	$Params{LIBS} = "-L$LibDir -l$snmp_link_lib";
@@ -73,7 +73,8 @@ sub InitMakeParams {
     }
     else {
 	$opts = NetSNMPGetOpts();
-	$Params{'LIBS'}    = `$opts->{'nsconfig'} --libs`;
+	$Params{'LDDLFLAGS'} = "$Config{lddlflags} " . `$opts->{'nsconfig'} --ldflags`;
+ 	$Params{'LIBS'}    = `$opts->{'nsconfig'} --libs`;
 	chomp($Params{'LIBS'});
 	$Params{'CCFLAGS'} = `$opts->{'nsconfig'} --cflags`;
 	chomp($Params{'CCFLAGS'});
